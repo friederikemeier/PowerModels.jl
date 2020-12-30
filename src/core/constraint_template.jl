@@ -675,6 +675,38 @@ function constraint_current_limit(pm::AbstractPowerModel, i::Int; nw::Int=pm.cnw
     end
 end
 
+""
+function constraint_ne_current_limit_from(pm::AbstractPowerModel, i::Int; nw::Int=pm.cnw)
+    branch = ref(pm, nw, :ne_branch, i)
+    f_bus = branch["f_bus"]
+    t_bus = branch["t_bus"]
+    f_idx = (i, f_bus, t_bus)
+    Memento.info(_LOGGER, "Welcome to constraint_template.jl inside constraint_ne_current_limit_from")
+
+    if !haskey(branch, "c_rating_a")
+        Memento.error(_LOGGER, "constraint_thermal_limit_from_ne requires a
+                        rate_a value on all branches, calc_thermal_limits! can
+                        be used to generate reasonable values")
+    end
+    constraint_ne_current_limit_from(pm, nw, i, f_idx, branch["c_rating_a"])
+
+end
+
+function constraint_ne_current_limit_to(pm::AbstractPowerModel, i::Int; nw::Int=pm.cnw)
+    branch = ref(pm, nw, :ne_branch, i)
+    f_bus = branch["f_bus"]
+    t_bus = branch["t_bus"]
+    t_idx = (i, t_bus, f_bus)
+
+    if !haskey(branch, "c_rating_a")
+        Memento.error(_LOGGER, "constraint_thermal_limit_to_ne requires a
+                        c_rating_a value on all branches, calc_thermal_limits! can
+                        be used to generate reasonable values")
+    end
+    constraint_ne_current_limit_to(pm, nw, i, t_idx, branch["c_rating_a"])
+
+end
+
 
 ### Branch - Phase Angle Difference Constraints ###
 

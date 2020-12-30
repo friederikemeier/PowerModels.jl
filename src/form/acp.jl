@@ -28,6 +28,8 @@ function constraint_voltage_magnitude_setpoint(pm::AbstractACPModel, n::Int, i::
 end
 
 
+
+"`p_to^2 + q_to^2 <= vm_to^2*c_rating_a^2`"
 function constraint_current_limit(pm::AbstractACPModel, n::Int, f_idx, c_rating_a)
     l,i,j = f_idx
     t_idx = (l,j,i)
@@ -44,7 +46,30 @@ function constraint_current_limit(pm::AbstractACPModel, n::Int, f_idx, c_rating_
     JuMP.@constraint(pm.model, p_to^2 + q_to^2 <= vm_to^2*c_rating_a^2)
 end
 
+"`p_ne[f_idx]^2 + q_ne[f_idx]^2 <= (vm_from^2*c_rating_a^2 * branch_ne[i])^2`"
+function constraint_ne_current_limit_from(pm::AbstractPowerModel, n::Int, i, f_idx, c_rating_a)
+    p_fr = var(pm, n, :p_ne, f_idx)
+    q_fr = var(pm, n, :q_ne, f_idx)
 
+    l,i,j = f_idx
+    vm_fr = var(pm, n, :vm, i)
+    z = var(pm, n, :branch_ne, i)
+    Memento.info(_LOGGER, "Welcome to acp.jl inside constraint_ne_current_limit_from")
+    JuMP.@NLconstraint(pm.model, p_fr^2 + q_fr^2 <= vm_fr^2*c_rating_a^2*z^2)
+end
+
+"`p_ne[f_idx]^2 + q_ne[f_idx]^2 <= (vm_from^2*c_rating_a^2 * branch_ne[i])^2`"
+function constraint_ne_current_limit_to(pm::AbstractPowerModel, n::Int, i, t_idx, c_rating_a)
+    p_to = var(pm, n, :p_ne, t_idx)
+    q_to = var(pm, n, :q_ne, t_idx)
+
+    l,i,j = t_idx
+    vm_to = var(pm, n, :vm, j)
+
+    z = var(pm, n, :branch_ne, i)
+    Memento.info(_LOGGER, "Welcome to acp.jl inside constraint_ne_current_limit_to")
+    JuMP.@NLconstraint(pm.model, p_to^2 + q_to^2 <= vm_to^2*c_rating_a^2*z^2)
+end
 ""
 function constraint_power_balance(pm::AbstractACPModel, n::Int, i::Int, bus_arcs, bus_arcs_dc, bus_arcs_sw, bus_gens, bus_storage, bus_pd, bus_qd, bus_gs, bus_bs)
     vm   = var(pm, n, :vm, i)
